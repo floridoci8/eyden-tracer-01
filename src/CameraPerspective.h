@@ -21,16 +21,33 @@ public:
 	CCameraPerspective(Vec3f pos, Vec3f dir, Vec3f up, float angle, Size resolution)
 		: ICamera(resolution)
 		, m_pos(pos)
-		, m_dir(dir)
+		, m_dir(normalize(dir))
 		, m_up(up)
 	{
 		// --- PUT YOUR CODE HERE ---
+		m_aspect = (float) resolution.width / resolution.height;
+		m_focus = 1 / tan(angle / 2 * Pif / 180);
+		m_xAxis = m_dir.cross(m_up);
+		m_yAxis = -m_up;
 	}
 	virtual ~CCameraPerspective(void) = default;
 
 	virtual bool InitRay(float x, float y, Ray& ray) override
 	{
 		// --- PUT YOUR CODE HERE ---
+		// Normalized device coordinates [0, 1]
+		float ndcx = (x + 0.5) / getResolution().width;
+		float ndcy = (y + 0.5) / getResolution().height;
+
+		// Screen space coordinates [-1, 1]
+		float sscx = (2 * ndcx - 1) * m_aspect;
+		float sscy = (2 * ndcy - 1);
+
+		// Generate direction through pixel center
+		ray.dir = normalize(m_dir * m_focus + sscx * m_xAxis + sscy * m_yAxis);
+		ray.org = m_pos;
+		ray.t = std::numeric_limits<float>::max();
+
 		return true;
 	}
 
